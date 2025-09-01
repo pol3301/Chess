@@ -1,6 +1,7 @@
 #pragma once
 
 #include "board.h"
+#include <cstdint>
 #include <vector>
 
 using bitboard = std::uint64_t;
@@ -40,7 +41,11 @@ private:
     SOUTH_EAST
   };
 
-  static constexpr int sliding_offsets[] = {8, -8, 1, -1, 7, 9, -9, -7};
+  static constexpr int sliding_offsets[8] = {8, -8, 1, -1, 7, 9, -9, -7};
+
+  static bitboard knight_bitboards[64];
+
+  static void calculate_knight_moves();
 
   void generate_king_moves(Board &board, int piece_index);
   void generate_knight_moves(Board &board, int piece_index);

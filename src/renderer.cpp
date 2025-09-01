@@ -119,7 +119,7 @@ void Renderer::draw_pieces(const HeldPiece *held_piece) const {
 
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
-  for (int i = 0; i < Board::BOARD_SIZE; i++) {
+  for (int i = 0; i < Board::SQUARES; i++) {
     if (held_piece->is_piece_held && i == held_piece->index)
       continue;
 

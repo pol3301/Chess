@@ -4,6 +4,7 @@
 #include <algorithm>
 
 int MoveGenerator::to_edge[Board::SQUARES][8] = {0};
+bitboard MoveGenerator::knight_bitboards[64];
 
 void MoveGenerator::precompute_move_data() {
   int i;
@@ -28,6 +29,8 @@ void MoveGenerator::precompute_move_data() {
       to_edge[i][WEST] = west;
     }
   }
+
+  calculate_knight_moves();
 }
 
 void MoveGenerator::generate_sliding_moves(Board &board, int piece_index) {
@@ -72,29 +75,39 @@ void MoveGenerator::generate_king_moves(Board &board, int piece_index) {
   }
 }
 
-constexpr int knight_directions[] = {6, 10, 17, 15, -6, -10, -17, -15};
+void MoveGenerator::calculate_knight_moves() {
 
-void MoveGenerator::generate_knight_moves(Board &board, int piece_index) {
-  int piece_color = Piece::color(board.piece_at(piece_index));
-  int x, y;
-  x = piece_index % 8;
-  y = piece_index / 8;
+  constexpr int knight_directions[8] = {6, 10, 17, 15, -6, -10, -17, -15};
 
-  for (int i = 0; i < 8; i++) {
-    int index = piece_index + knight_directions[i];
+  for (int curr_square = 0; curr_square < Board::SQUARES; ++curr_square) {
+    // int piece_color = Piece::color(board.piece_at(curr_square));
+    bitboard bb = 0;
 
-    int x2, y2;
-    x2 = index % 8;
-    y2 = index / 8;
+    int x, y;
+    x = curr_square % 8;
+    y = curr_square / 8;
 
-    if (std::abs(x - x2) > 2 || std::abs(y - y2) > 2)
-      continue;
+    for (int i = 0; i < 8; i++) {
+      int index = curr_square + knight_directions[i];
 
-    if (index < 0 || index >= Board::BOARD_SIZE)
-      continue;
-    if (Piece::color(board.piece_at(index)) == piece_color)
-      continue;
-    legal_moves.push_back({piece_index, index, FLAG_NONE});
+      int x2, y2;
+      x2 = index % 8;
+      y2 = index / 8;
+
+      if (std::abs(x - x2) > 2 || std::abs(y - y2) > 2)
+        continue;
+
+      if (index < 0 || index >= Board::SQUARES)
+        continue;
+
+      bb |= 1ULL << index;
+
+      // if (Piece::color(board.piece_at(index)) == piece_color)
+      // continue;
+      // legal_moves.push_back({piece_index, index, FLAG_NONE});
+    }
+
+    knight_bitboards[curr_square] = bb;
   }
 }
 
@@ -132,6 +145,21 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index) {
     if (!board.is_square_empty(index) && color != moving_color) {
       legal_moves.push_back({piece_index, index, FLAG_NONE});
     }
+  }
+}
+
+void MoveGenerator::generate_knight_moves(Board &board, int piece_index) {
+  bitboard moves = knight_bitboards[piece_index];
+  int my_color = Piece::color(board.piece_at(piece_index));
+
+  while (moves) {
+    int to = __builtin_ctzll(moves);
+    moves &= moves - 1;
+
+    if (my_color == Piece::color(board.piece_at(to)))
+      continue;
+
+    legal_moves.push_back({piece_index, to, 0});
   }
 }
 
