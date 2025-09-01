@@ -16,7 +16,7 @@ Board::Board() {
 }
 
 void Board::set_piece(int square, int piece) {
-  if (!in_range(square, 0, BOARD_SIZE - 1))
+  if (!in_range(square, 0, SQUARES - 1))
     return;
   squares[square] = piece;
 }

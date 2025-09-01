@@ -22,8 +22,6 @@ public:
 
   Board();
 
-  static constexpr int BOARD_SIZE = 64;
-
   void set_piece(int square, int type, int color);
   void set_piece(int square, int piece);
 
@@ -44,6 +42,6 @@ public:
 
 private:
   std::list<UndoMove> undo_list;
-  int squares[BOARD_SIZE] = {0};
+  int squares[SQUARES] = {0};
   int turn;
 };
