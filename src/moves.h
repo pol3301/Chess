@@ -3,6 +3,8 @@
 #include "board.h"
 #include <vector>
 
+using bitboard = std::uint64_t;
+
 enum move_flags { FLAG_NONE, DOUBLE_PAWN_PUSH };
 
 struct Move {
@@ -22,7 +24,8 @@ public:
   void generate_legal_moves(Board &board);
   void generate_pseudo_legal_moves(Board &board);
 
-  std::vector<Move> legal_moves = {};
+  std::vector<Move> legal_moves;
+
   static void precompute_move_data();
 
 private:
@@ -41,8 +44,8 @@ private:
 
   void generate_king_moves(Board &board, int piece_index);
   void generate_knight_moves(Board &board, int piece_index);
-  void generate_pawn_moves(Board &board, int piece_index);
   void generate_sliding_moves(Board &board, int piece_index);
+  void generate_pawn_moves(Board &board, int piece_index);
 
   static int to_edge[Board::SQUARES][8];
 };

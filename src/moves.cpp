@@ -2,7 +2,6 @@
 #include "board.h"
 #include "piece.h"
 #include <algorithm>
-#include <iostream>
 
 int MoveGenerator::to_edge[Board::SQUARES][8] = {0};
 
@@ -143,7 +142,7 @@ void MoveGenerator::generate_legal_moves(Board &board) {
 void MoveGenerator::generate_pseudo_legal_moves(Board &board) {
   legal_moves.clear();
   for (int i = 0; i < Board::SQUARES; i++) {
-    if (board.get_turn() != Piece::color(board.piece_at(i)))
+    if (Piece::color(board.piece_at(i)) != board.get_turn())
       continue;
     switch (Piece::type(board.piece_at(i))) {
     case Piece::KING:
