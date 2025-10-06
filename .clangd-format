@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 0
+AllowShortCaseLabelsOnASingleLine: true
+BreakBeforeBraces: Allman   # optional, depends on your style

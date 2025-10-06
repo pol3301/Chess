@@ -3,6 +3,7 @@
 #include "piece.h"
 #include <SDL.h>
 #include <SDL_image.h>
+#include <bit>
 #include <iostream>
 
 enum piece_texture_index {
@@ -59,6 +60,20 @@ void Renderer::load_piece_texture(int index, const char *path) {
   }
 }
 
+void Renderer::draw_bitboard(bitboard bb) const {
+  while (bb) {
+    int index = std::countr_zero(bb);
+    bb &= bb - 1;
+
+    SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
+
+    rect.x = (index % 8) * TILE_SIZE;
+    rect.y = (7 - (index / 8)) * TILE_SIZE;
+
+    SDL_RenderFillRect(sdl_renderer, &rect);
+  }
+}
+
 void Renderer::load_piece_textures() {
   load_piece_texture(WHITE_KING, "res/100x100/wk.png");
   load_piece_texture(WHITE_QUEEN, "res/100x100/wq.png");
@@ -81,6 +96,10 @@ void Renderer::render(Board &board, HeldPiece *held_piece,
 
   draw_board_tiles();
   draw_legal_moves(legal_moves, held_piece);
+  // SDL_SetRenderDrawColor(sdl_renderer, 0, 255, 0, 255);
+  // draw_bitboard(board.black_bitboard);
+  // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 255, 255);
+  // draw_bitboard(board.white_bitboard);
   draw_pieces(held_piece);
   draw_held_piece(held_piece);
 
@@ -90,18 +109,21 @@ void Renderer::render(Board &board, HeldPiece *held_piece,
 void Renderer::draw_board_tiles() const {
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
+  bool white = true;
   for (int y = 0; y < 8; y++) {
     for (int x = 0; x < 8; x++) {
       rect.x = x * TILE_SIZE;
       rect.y = y * TILE_SIZE;
 
-      if ((x + y) % 2)
+      if (white)
         SDL_SetRenderDrawColor(sdl_renderer, 240, 217, 181, 255); // Light
       else
         SDL_SetRenderDrawColor(sdl_renderer, 181, 136, 99, 255); // Dark
 
       SDL_RenderFillRect(sdl_renderer, &rect);
+      white = !white;
     }
+    white = !white;
   }
 }
 

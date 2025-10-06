@@ -13,9 +13,9 @@ public:
 
 private:
   SDL_Window *window;
-  Renderer renderer;
-  MoveGenerator mh;
   Board board;
+  MoveGenerator mg;
+  Renderer renderer;
 
   HeldPiece held_piece = {};
 
