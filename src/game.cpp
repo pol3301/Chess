@@ -8,7 +8,7 @@
 constexpr int FRAME_RATE = 60;
 constexpr int FRAME_DELAY = 1000 / FRAME_RATE;
 
-Game::Game() : window(nullptr), renderer(board), board(), mh() {
+Game::Game() : window(nullptr), renderer(board) {
 
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     std::cerr << SDL_GetError() << std::endl;
@@ -65,7 +65,6 @@ void Game::update(SDL_Event *e) {
 
       held_piece.index = y * 8 + x;
       held_piece.is_piece_held = true;
-      mh.generate_legal_moves(board);
       break;
 
     case SDL_MOUSEBUTTONUP:
@@ -79,9 +78,11 @@ void Game::update(SDL_Event *e) {
 
       move = {held_piece.index, y * 8 + x, 0};
 
-      moveIndex = std::find(mh.legal_moves.begin(), mh.legal_moves.end(), move);
-      if (moveIndex != mh.legal_moves.end())
+      moveIndex = std::find(mg.legal_moves.begin(), mg.legal_moves.end(), move);
+      if (moveIndex != mg.legal_moves.end()) {
         board.do_move(*moveIndex);
+        mg.generate_legal_moves(board);
+      }
 
       break;
 
@@ -94,8 +95,13 @@ void Game::update(SDL_Event *e) {
       key_mod = e->key.keysym.mod;
       if (key_pressed == SDLK_ESCAPE)
         is_running = false;
+      if (key_pressed == SDLK_n) {
+        board.new_turn();
+        mg.generate_legal_moves(board);
+      }
       if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_z) {
         board.undo_move();
+        mg.generate_legal_moves(board);
       }
 
     default:
@@ -107,11 +113,12 @@ void Game::update(SDL_Event *e) {
 void Game::run() {
   SDL_Event e;
 
+  mg.generate_legal_moves(board);
   while (is_running) {
     uint32_t frame_start = SDL_GetTicks();
 
     update(&e);
-    renderer.render(board, &held_piece, mh.legal_moves);
+    renderer.render(board, &held_piece, mg.legal_moves);
 
     uint32_t frame_time = SDL_GetTicks() - frame_start;
 

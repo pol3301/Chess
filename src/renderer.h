@@ -30,6 +30,7 @@ private:
   int get_piece_texture_index(int piece) const;
 
   void draw_board_tiles() const;
+  void draw_bitboard(bitboard bb) const;
   void draw_pieces(const HeldPiece *held_piece) const;
   void draw_held_piece(HeldPiece *held_piece) const;
   void draw_legal_moves(const std::vector<Move> &legal_moves,
