@@ -101,6 +101,7 @@ void Renderer::render(Board &board, HeldPiece *held_piece,
   // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 255, 255);
   // draw_bitboard(board.white_bitboard);
   draw_pieces(held_piece);
+  // draw_promotion_box(56);
   draw_held_piece(held_piece);
 
   SDL_RenderPresent(sdl_renderer);
@@ -130,9 +131,12 @@ void Renderer::draw_board_tiles() const {
 int Renderer::get_piece_texture_index(int piece) const {
 
   int texture_index = -1;
-  texture_index += piece & Piece::type_mask;
-  if ((piece & Piece::color_mask) != Piece::WHITE)
+  texture_index += Piece::type(piece);
+  if (Piece::color(piece) != Piece::WHITE)
     texture_index += 6;
+
+  if (texture_index == -1)
+    printf("Error retrieved non valid piece texture");
 
   return texture_index;
 }
@@ -145,7 +149,7 @@ void Renderer::draw_pieces(const HeldPiece *held_piece) const {
     if (held_piece->is_piece_held && i == held_piece->index)
       continue;
 
-    if ((_board.piece_at(i) & Piece::type_mask) == Piece::EMPTY)
+    if (Piece::type(_board.piece_at(i)) == Piece::EMPTY)
       continue;
 
     rect.x = (i % 8) * TILE_SIZE;
@@ -193,4 +197,25 @@ void Renderer::draw_legal_moves(const std::vector<Move> &legal_moves,
       SDL_RenderFillRect(sdl_renderer, &rect);
     }
   }
+}
+
+int Renderer::draw_promotion_box(int square) const {
+
+  int x = (square % 8) * TILE_SIZE;
+  int y = (7 - (square / 8)) * TILE_SIZE;
+
+  SDL_Rect queen_rect = {x, y, TILE_SIZE, TILE_SIZE};
+  SDL_Rect rook_rect = {x, y + TILE_SIZE, TILE_SIZE, TILE_SIZE};
+  SDL_Rect bishop_rect = {x, y + 2 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
+  SDL_Rect knight_rect = {x, y + 3 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
+
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_QUEEN], nullptr,
+                 &queen_rect);
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_ROOK], nullptr, &rook_rect);
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_BISHOP], nullptr,
+                 &bishop_rect);
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_KNIGHT], nullptr,
+                 &knight_rect);
+
+  return 0;
 }
