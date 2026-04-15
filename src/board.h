@@ -25,6 +25,7 @@ struct HeldPiece {
 class Board {
 public:
   static constexpr int SQUARES = 64;
+  static constexpr int EN_PASSANT_NULL = 999;
 
   Board();
   Board(std::string fen);
@@ -33,7 +34,7 @@ public:
 
   void move_piece(int from, int to);
 
-  void do_move(Move &move);
+  void do_move(Move const &move);
   void undo_move();
 
   int piece_at(int index) { return squares[index]; }

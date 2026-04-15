@@ -35,4 +35,5 @@ private:
   void draw_held_piece(HeldPiece *held_piece) const;
   void draw_legal_moves(const std::vector<Move> &legal_moves,
                         const HeldPiece *held_piece) const;
+  int draw_promotion_box(int square) const;
 };

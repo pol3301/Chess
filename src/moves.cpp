@@ -116,7 +116,7 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
                                         std::vector<Move> &moves) {
   int moving_color = Piece::color(board.piece_at(piece_index));
 
-  int dir, start_rank;
+  int dir, start_rank, promotion_rank;
   int *capture_dir;
 
   static int capture_dir_white[2] = {9, 7};
@@ -126,17 +126,26 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
     dir = 8;
     capture_dir = capture_dir_white;
     start_rank = 1;
+    promotion_rank = 8;
   } else {
     dir = -8;
     capture_dir = capture_dir_black;
     start_rank = 6;
+    promotion_rank = 0;
   }
 
   int one_step = piece_index + dir;
   int two_step = piece_index + (dir * 2);
 
   if (board.is_square_empty(one_step)) {
-    moves.push_back({piece_index, one_step, FLAG_NONE});
+    if (piece_index / 8 != promotion_rank) {
+      moves.push_back({piece_index, one_step, FLAG_NONE});
+    } else {
+      moves.push_back({piece_index, one_step, FLAG_PROMOTE_QUEEN});
+      moves.push_back({piece_index, one_step, FLAG_PROMOTE_ROOK});
+      moves.push_back({piece_index, one_step, FLAG_PROMOTE_BISHOP});
+      moves.push_back({piece_index, one_step, FLAG_PROMOTE_KNIGHT});
+    }
 
     if (piece_index / 8 == start_rank && board.is_square_empty(two_step))
       moves.push_back({piece_index, two_step, FLAG_DOUBLE_PAWN_PUSH});
@@ -148,7 +157,9 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
     int index = piece_index + dir;
     int color = Piece::color(board.piece_at(index));
 
-    if (to_edge[piece_index][i + 2] < 1)
+    int edges[] = {EAST, WEST};
+
+    if (to_edge[piece_index][edges[i]] < 1)
       continue;
 
     if (!board.is_square_empty(index) && color != moving_color) {
@@ -198,23 +209,20 @@ void MoveGenerator::generate_castles(Board &board, std::vector<Move> &moves) {
 
   int flag;
 
-  flag = is_white_turn ? FLAG_WHITE_KING_CASTLE : FLAG_BLACK_KING_CASTLE;
   if (can_castle_king && !(all_pieces & mask_king) && can_move_right) {
-    moves.push_back({4 + base_rank, 6 + base_rank, flag});
+    moves.push_back({4 + base_rank, 6 + base_rank, FLAG_KING_CASTLE});
   }
 
-  flag = is_white_turn ? FLAG_WHITE_QUEEN_CASTLE : FLAG_BLACK_QUEEN_CASTLE;
   if (can_castle_queen && !(all_pieces & mask_queen) && can_move_left) {
-    moves.push_back({4 + base_rank, 2 + base_rank, flag});
+    moves.push_back({4 + base_rank, 2 + base_rank, FLAG_QUEEN_CASTLE});
   }
 }
 
 void MoveGenerator::generate_legal_moves(Board &board) {
 
-  legal_moves = generate_pseudo_legal_moves(board);
-  // return;
-
   std::vector<Move> moves = generate_pseudo_legal_moves(board);
+
+  generate_castles(board, moves);
 
   for (int i = moves.size() - 1; i >= 0; --i) {
     board.do_move(moves[i]);
@@ -235,8 +243,6 @@ void MoveGenerator::generate_legal_moves(Board &board) {
 
     board.undo_move();
   }
-
-  generate_castles(board, moves);
 
   legal_moves = moves;
 }
