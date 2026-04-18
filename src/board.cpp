@@ -85,29 +85,54 @@ void Board::undo_move() {
 
   undo_list.pop_back();
 }
+inline void Board::handle_promotion(int flag, int from, int to) {
+  switch (flag) {
+  case FLAG_PROMOTE_QUEEN:
+    set_piece(to, Piece::color(piece_at(from)) | Piece::QUEEN);
+    break;
+  case FLAG_PROMOTE_ROOK:
+    set_piece(to, Piece::color(piece_at(from)) | Piece::ROOK);
+    break;
+  case FLAG_PROMOTE_BISHOP:
+    set_piece(to, Piece::color(piece_at(from)) | Piece::BISHOP);
+    break;
+  case FLAG_PROMOTE_KNIGHT:
+    set_piece(to, Piece::color(piece_at(from)) | Piece::KNIGHT);
+    break;
+  }
+}
 
-void Board::do_move(Move const &move) {
-  int captured_piece = piece_at(move.to);
-  UndoMove undo = {move.from,         move.to,         captured_piece,
-                   en_passant_square, castling_rights, move.flags};
+// TODO: Update to a lookup table
+inline void Board::update_castling_rights(int from, int to) {
+  for (int square : {from, to}) {
+    switch (square) {
+    case 4:
+      castling_rights &= ~MoveGenerator::CASTLING_WK;
+      castling_rights &= ~MoveGenerator::CASTLING_WQ;
+      break;
+    case 60:
+      castling_rights &= ~MoveGenerator::CASTLING_BK;
+      castling_rights &= ~MoveGenerator::CASTLING_BQ;
+      break;
+    case 0:
+      castling_rights &= ~MoveGenerator::CASTLING_WQ;
+      break;
+    case 7:
+      castling_rights &= ~MoveGenerator::CASTLING_WK;
+      break;
+    case 56:
+      castling_rights &= ~MoveGenerator::CASTLING_BQ;
+      break;
+    case 63:
+      castling_rights &= ~MoveGenerator::CASTLING_BK;
+      break;
+    }
+  }
+}
 
-  en_passant_square = EN_PASSANT_NULL;
-  int moved_color = Piece::color(piece_at(move.from));
-
+inline void Board::handle_special_cases(const Move &move, int moved_color,
+                                        UndoMove &undo) {
   switch (move.flags) {
-    // case FLAG_WHITE_KING_CASTLE:
-    //   move_piece(7, 5);
-    //   break;
-    // case FLAG_WHITE_QUEEN_CASTLE:
-    //   move_piece(0, 3);
-    //   break;
-    // case FLAG_BLACK_KING_CASTLE:
-    //   move_piece(63, 61);
-    //   break;
-    // case FLAG_BLACK_QUEEN_CASTLE:
-    //   move_piece(56, 59);
-    //   break;
-
   case FLAG_KING_CASTLE:
     if (moved_color == Piece::WHITE)
       move_piece(7, 5);
@@ -136,48 +161,22 @@ void Board::do_move(Move const &move) {
     }
     break;
   }
+}
+
+void Board::do_move(Move const &move) {
+  int captured_piece = piece_at(move.to);
+  UndoMove undo = {move.from,         move.to,         captured_piece,
+                   en_passant_square, castling_rights, move.flags};
+
+  en_passant_square = EN_PASSANT_NULL;
+
+  handle_special_cases(move, Piece::color(piece_at(move.from)), undo);
 
   move_piece(move.from, move.to);
 
-  switch (move.flags) {
-  case FLAG_PROMOTE_QUEEN:
-    set_piece(move.to, Piece::color(piece_at(move.from)) | Piece::QUEEN);
-    break;
-  case FLAG_PROMOTE_ROOK:
-    set_piece(move.to, Piece::color(piece_at(move.from)) | Piece::QUEEN);
-    break;
-  case FLAG_PROMOTE_BISHOP:
-    set_piece(move.to, Piece::color(piece_at(move.from)) | Piece::QUEEN);
-    break;
-  case FLAG_PROMOTE_KNIGHT:
-    set_piece(move.to, Piece::color(piece_at(move.from)) | Piece::QUEEN);
-    break;
-  }
+  handle_promotion(move.flags, move.from, move.to);
 
-  for (int square : {move.from, move.to}) {
-    switch (square) {
-    case 4:
-      castling_rights &= ~MoveGenerator::CASTLING_WK;
-      castling_rights &= ~MoveGenerator::CASTLING_WQ;
-      break;
-    case 60:
-      castling_rights &= ~MoveGenerator::CASTLING_BK;
-      castling_rights &= ~MoveGenerator::CASTLING_BQ;
-      break;
-    case 0:
-      castling_rights &= ~MoveGenerator::CASTLING_WQ;
-      break;
-    case 7:
-      castling_rights &= ~MoveGenerator::CASTLING_WK;
-      break;
-    case 56:
-      castling_rights &= ~MoveGenerator::CASTLING_BQ;
-      break;
-    case 63:
-      castling_rights &= ~MoveGenerator::CASTLING_BK;
-      break;
-    }
-  }
+  update_castling_rights(move.from, move.to);
 
   new_turn();
 
@@ -185,15 +184,6 @@ void Board::do_move(Move const &move) {
 }
 
 void Board::move_piece(int from, int to) {
-  int moved_color = Piece::color(piece_at(from));
-
-  if (!is_square_empty(to)) {
-    bitboard &taken_bitboard =
-        (moved_color == Piece::WHITE ? black_bitboard : white_bitboard);
-
-    taken_bitboard &= ~(1ULL << to);
-  }
-
   set_piece(to, piece_at(from));
   set_piece(from, Piece::EMPTY);
 }

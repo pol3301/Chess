@@ -3,37 +3,11 @@
 #include <SDL_image.h>
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 
 constexpr int FRAME_RATE = 60;
 constexpr int FRAME_DELAY = 1000 / FRAME_RATE;
 
-Game::Game() : window(nullptr), renderer(board) {
-
-  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-    std::cerr << SDL_GetError() << std::endl;
-    exit(-1);
-  }
-
-  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-    std::cerr << SDL_GetError() << std::endl;
-    SDL_Quit();
-    exit(-1);
-  }
-
-  window =
-      SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                       WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-
-  if (!window) {
-    std::cerr << SDL_GetError() << std::endl;
-    SDL_Quit();
-    IMG_Quit();
-    exit(-1);
-  }
-
-  renderer.init(window);
-}
+Game::Game() : window(nullptr), renderer(board) { renderer.init(); }
 
 Game::~Game() {
   if (window)

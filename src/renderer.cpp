@@ -22,7 +22,35 @@ enum piece_texture_index {
   BLACK_PAWN,
 };
 
-void Renderer::init(SDL_Window *window) {
+// TODO: Fix erryor handling
+void Renderer::init_libraries() {
+  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    std::cerr << SDL_GetError() << std::endl;
+    exit(-1);
+  }
+
+  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+    std::cerr << SDL_GetError() << std::endl;
+    SDL_Quit();
+    exit(-1);
+  }
+}
+
+// TODO: Fix erryor handling
+void Renderer::init() {
+  init_libraries();
+
+  window =
+      SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+
+  if (!window) {
+    std::cerr << SDL_GetError() << std::endl;
+    SDL_Quit();
+    IMG_Quit();
+    exit(-1);
+  }
+
   sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
   if (!sdl_renderer) {
@@ -44,13 +72,16 @@ Renderer::~Renderer() {
 
   if (sdl_renderer)
     SDL_DestroyRenderer(sdl_renderer);
+
+  if (window)
+    SDL_DestroyWindow(window);
 }
 
 void Renderer::load_piece_texture(int index, const char *path) {
   piece_textures[index] = IMG_LoadTexture(sdl_renderer, path);
 
   if (piece_textures[index])
-    std::cerr << "Loaded piece at path " << path << " at index " << index
+    std::cout << "Loaded piece at path " << path << " at index " << index
               << std::endl;
   else {
     std::cerr << "Failed to load piece at path " << path << " at index "
@@ -136,7 +167,7 @@ int Renderer::get_piece_texture_index(int piece) const {
     texture_index += 6;
 
   if (texture_index == -1)
-    printf("Error retrieved non valid piece texture");
+    std::cerr << "Error retrieved non valid piece texture" << std::endl;
 
   return texture_index;
 }

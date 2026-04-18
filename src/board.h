@@ -56,6 +56,10 @@ public:
   bitboard black_bitboard = 0;
 
 private:
+  inline void update_castling_rights(int from, int to);
+  inline void handle_promotion(int flag, int from, int to);
+  inline void handle_special_cases(const Move &move, int moved_color,
+                                   UndoMove &undo);
   std::list<UndoMove> undo_list;
   int castling_rights = 0b1111;
   int squares[SQUARES] = {0};

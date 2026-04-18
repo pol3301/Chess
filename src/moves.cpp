@@ -6,7 +6,7 @@
 // #include <iostream>
 
 int MoveGenerator::to_edge[Board::SQUARES][8] = {0};
-bitboard MoveGenerator::knight_bitboards[64];
+bitboard MoveGenerator::knight_bitboards[Board::SQUARES];
 
 void MoveGenerator::precompute_move_data() {
   int i;
