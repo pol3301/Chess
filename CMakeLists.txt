@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Default build type = Release (but allow overriding)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE
@@ -20,7 +22,7 @@ find_package(SDL2_image REQUIRED)
 # Copy resources
 add_custom_target(
   copy_resources ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
-                             ${CMAKE_SOURCE_DIR}/res ${CMAKE_BINARY_DIR}/res)
+  ${CMAKE_SOURCE_DIR}/res ${CMAKE_BINARY_DIR}/res)
 
 set(SOURCES src/main.cpp src/renderer.cpp src/board.cpp src/game.cpp
             src/fen.cpp src/moves.cpp)
@@ -32,7 +34,7 @@ option(USE_ASAN "Enable AddressSanitizer" OFF)
 
 if(USE_ASAN)
   target_compile_options(Chess PRIVATE -fsanitize=address
-                                       -fno-omit-frame-pointer)
+  -fno-omit-frame-pointer)
   target_link_options(Chess PRIVATE -fsanitize=address)
 endif()
 

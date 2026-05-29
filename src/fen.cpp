@@ -1,8 +1,18 @@
 #include "fen.h"
 #include "board.h"
+#include "moves.h"
 #include "piece.h"
 
 #include <array>
+#include <iostream>
+
+constexpr std::array<const char *, 64> tile_table = {
+    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "a2", "b2", "c2",
+    "d2", "e2", "f2", "g2", "h2", "a3", "b3", "c3", "d3", "e3", "f3",
+    "g3", "h3", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a5",
+    "b5", "c5", "d5", "e5", "f5", "g5", "h5", "a6", "b6", "c6", "d6",
+    "e6", "f6", "g6", "h6", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
+    "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"};
 
 bool Fen::is_fen_char(char token) {
   auto u_token = static_cast<unsigned char>(token);
@@ -50,16 +60,46 @@ void Fen::set_piece(int index, char token, Board &board) {
   board.set_piece(index, piece_type | color);
 }
 
+std::vector<std::string_view> split_strings(std::string_view fen) {
+  std::vector<std::string_view> strings;
+  size_t start = 0;
+  size_t end = fen.find(' ');
+
+  while (end != std::string_view::npos) {
+    if (end != start) {
+      strings.push_back(fen.substr(start, end - start));
+    }
+    start = end + 1;
+    end = fen.find(' ', start);
+  }
+
+  if (start < fen.size()) {
+    strings.push_back(fen.substr(start));
+  }
+
+  return strings;
+}
+
 void Fen::load(Board &board, std::string_view fen) {
+  board.clear_board();
+
   int x = 0, y = 7;
 
   board.set_turn(Piece::WHITE);
-  board.en_passant_square = board.EN_PASSANT_NULL;
+  board.en_passant_square = Board::EN_PASSANT_NULL;
 
-  for (char token : fen) {
+  std::vector<std::string_view> parts = split_strings(fen);
 
-    if (!is_fen_char(token))
-      return;
+  bool failed = false;
+
+  if (parts.size() < 4)
+    failed = true;
+
+  for (char token : parts[0]) {
+    if (!is_fen_char(token)) {
+      failed = true;
+      break;
+    }
 
     if (std::isalpha(token)) {
       set_piece(x + y * 8, token, board);
@@ -67,10 +107,143 @@ void Fen::load(Board &board, std::string_view fen) {
     } else if (std::isdigit(token)) {
       x += token - '0';
     } else if (token == '/') {
+      if (x != 8) {
+        failed = true;
+        break;
+      }
       x = 0;
       y--;
     }
-
-    token++;
   }
+
+  if (parts[1].size() > 1)
+    failed = true;
+  else
+    board.set_turn(parts[1][0] == 'w' ? Piece::WHITE : Piece::BLACK);
+
+  if (parts[2].size() > 4)
+    failed = true;
+  else {
+    int rights = 0;
+    for (char right : parts[2]) {
+      switch (right) {
+      case 'K':
+        rights |= MoveGenerator::CASTLING_WK;
+        break;
+      case 'Q':
+        rights |= MoveGenerator::CASTLING_WQ;
+        break;
+      case 'k':
+        rights |= MoveGenerator::CASTLING_BK;
+        break;
+      case 'q':
+        rights |= MoveGenerator::CASTLING_BQ;
+        break;
+      case '-':
+        break;
+      default:
+        failed = true;
+        break;
+      }
+    }
+    board.set_castling_rights(rights);
+  }
+
+  if (parts[3].size() > 2)
+    failed = true;
+  else {
+    if (parts[3] == "-")
+      board.en_passant_square = Board::EN_PASSANT_NULL;
+    else
+      board.en_passant_square = parts[3][0] - 'a' + (parts[3][1] - '1') * 8;
+    if ((board.en_passant_square > 64 || board.en_passant_square < 0) &&
+        parts[3] != "-")
+      failed = true;
+  }
+
+  if (!(x == 8 && y == 0))
+    failed = true;
+
+  if (failed) {
+    load(board, START_POS);
+    std::cout << failed << std::endl;
+  }
+}
+
+std::string Fen::generate_fen(Board &board) {
+  std::string fen;
+
+  int empty_count = 0;
+
+  for (int y = 7; y >= 0; --y) {
+    for (int x = 0; x < 8; ++x) {
+      int index = y * 8 + x;
+
+      int curr_piece = board.piece_at(index);
+
+      if (curr_piece == Piece::EMPTY)
+        empty_count++;
+
+      else {
+        if (empty_count > 0) {
+          fen.append(std::to_string(empty_count));
+          empty_count = 0;
+        }
+
+        char c = [curr_piece]() {
+          switch (Piece::type(curr_piece)) {
+          case Piece::KING:
+            return 'k';
+
+          case Piece::QUEEN:
+            return 'q';
+          case Piece::ROOK:
+            return 'r';
+          case Piece::BISHOP:
+            return 'b';
+          case Piece::KNIGHT:
+            return 'n';
+          case Piece::PAWN:
+            return 'p';
+          default:
+            return 'x';
+          }
+        }();
+
+        if (Piece::color(curr_piece) == Piece::WHITE)
+          c = std::toupper(c);
+        fen.push_back(c);
+      }
+    }
+
+    if (empty_count > 0) {
+      fen.append(std::to_string(empty_count));
+      empty_count = 0;
+    }
+
+    if (y != 0)
+      fen.append("/");
+  }
+
+  fen.push_back(' ');
+  fen.push_back(board.get_turn() == Piece::WHITE ? 'w' : 'b');
+  fen.push_back(' ');
+
+  int rights = board.get_castling_rights();
+
+  if (MoveGenerator::CASTLING_WK & rights)
+    fen.push_back('K');
+  if (MoveGenerator::CASTLING_WQ & rights)
+    fen.push_back('Q');
+  if (MoveGenerator::CASTLING_BK & rights)
+    fen.push_back('k');
+  if (MoveGenerator::CASTLING_BQ & rights)
+    fen.push_back('q');
+
+  if (board.en_passant_square != Board::EN_PASSANT_NULL) {
+    fen.push_back(' ');
+    fen.append(tile_table[board.en_passant_square]);
+  }
+
+  return fen;
 }

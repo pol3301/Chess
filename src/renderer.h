@@ -17,9 +17,8 @@ public:
 
   void init();
 
-  void render(Board &board, HeldPiece *held_piece,
+  void render(Board &board, HeldPiece &held_piece,
               const std::vector<Move> &legal_moves) const;
-  void load_piece_textures();
 
 private:
   SDL_Window *window;
@@ -31,11 +30,12 @@ private:
   int get_piece_texture_index(int piece) const;
 
   void init_libraries();
+  void load_piece_textures();
   void draw_board_tiles() const;
   void draw_bitboard(bitboard bb) const;
-  void draw_pieces(const HeldPiece *held_piece) const;
-  void draw_held_piece(HeldPiece *held_piece) const;
+  void draw_pieces(const HeldPiece &held_piece) const;
+  void draw_held_piece(const HeldPiece &held_piece) const;
   void draw_legal_moves(const std::vector<Move> &legal_moves,
-                        const HeldPiece *held_piece) const;
+                        const HeldPiece &held_piece) const;
   int draw_promotion_box(int square) const;
 };

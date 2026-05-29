@@ -121,7 +121,7 @@ void Renderer::load_piece_textures() {
   load_piece_texture(BLACK_PAWN, "res/100x100/bp.png");
 }
 
-void Renderer::render(Board &board, HeldPiece *held_piece,
+void Renderer::render(Board &board, HeldPiece &held_piece,
                       const std::vector<Move> &legal_moves) const {
   SDL_RenderClear(sdl_renderer);
 
@@ -172,12 +172,12 @@ int Renderer::get_piece_texture_index(int piece) const {
   return texture_index;
 }
 
-void Renderer::draw_pieces(const HeldPiece *held_piece) const {
+void Renderer::draw_pieces(const HeldPiece &held_piece) const {
 
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
   for (int i = 0; i < Board::SQUARES; i++) {
-    if (held_piece->is_piece_held && i == held_piece->index)
+    if (held_piece.is_piece_held && i == held_piece.index)
       continue;
 
     if (Piece::type(_board.piece_at(i)) == Piece::EMPTY)
@@ -195,16 +195,16 @@ void Renderer::draw_pieces(const HeldPiece *held_piece) const {
   }
 }
 
-void Renderer::draw_held_piece(HeldPiece *held_piece) const {
-  if (!held_piece->is_piece_held)
+void Renderer::draw_held_piece(const HeldPiece &held_piece) const {
+  if (!held_piece.is_piece_held)
     return;
 
-  int piece = _board.piece_at(held_piece->index);
+  int piece = _board.piece_at(held_piece.index);
   if (!piece)
     return;
 
-  SDL_Rect rect = {held_piece->x - (TILE_SIZE / 2),
-                   held_piece->y - (TILE_SIZE / 2), TILE_SIZE, TILE_SIZE};
+  SDL_Rect rect = {held_piece.x - (TILE_SIZE / 2),
+                   held_piece.y - (TILE_SIZE / 2), TILE_SIZE, TILE_SIZE};
 
   int texture_index = get_piece_texture_index(piece);
   SDL_Texture *texture = piece_textures[texture_index];
@@ -213,15 +213,15 @@ void Renderer::draw_held_piece(HeldPiece *held_piece) const {
 }
 
 void Renderer::draw_legal_moves(const std::vector<Move> &legal_moves,
-                                const HeldPiece *held_piece) const {
-  if (!held_piece->is_piece_held)
+                                const HeldPiece &held_piece) const {
+  if (!held_piece.is_piece_held)
     return;
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
   SDL_SetRenderDrawColor(sdl_renderer, 255, 0, 0, 255);
 
   for (int i = 0; i < legal_moves.size(); i++) {
-    if (legal_moves[i].from == held_piece->index) {
+    if (legal_moves[i].from == held_piece.index) {
       rect.x = legal_moves[i].to % 8 * TILE_SIZE;
       rect.y = (7 - (legal_moves[i].to / 8)) * TILE_SIZE;
 

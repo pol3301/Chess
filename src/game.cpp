@@ -1,4 +1,5 @@
 #include "game.h"
+#include "fen.h"
 #include "moves.h"
 #include <SDL_image.h>
 #include <algorithm>
@@ -78,6 +79,10 @@ void Game::update(SDL_Event *e) {
         mg.generate_legal_moves(board);
       }
 
+      if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_c) {
+        SDL_SetClipboardText(Fen::generate_fen(board).c_str());
+      }
+
     default:
       break;
     }
@@ -92,7 +97,7 @@ void Game::run() {
     uint32_t frame_start = SDL_GetTicks();
 
     update(&e);
-    renderer.render(board, &held_piece, mg.legal_moves);
+    renderer.render(board, held_piece, mg.legal_moves);
 
     uint32_t frame_time = SDL_GetTicks() - frame_start;
 

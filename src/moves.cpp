@@ -9,26 +9,24 @@ int MoveGenerator::to_edge[Board::SQUARES][8] = {0};
 bitboard MoveGenerator::knight_bitboards[Board::SQUARES];
 
 void MoveGenerator::precompute_move_data() {
-  int i;
-  int north, south, east, west;
   for (int x = 0; x < 8; x++) {
     for (int y = 0; y < 8; y++) {
-      i = x + y * 8;
+      int i = x + y * 8;
 
-      north = 7 - y;
-      south = y;
-      east = 7 - x;
-      west = x;
-
-      to_edge[i][NORTH_EAST] = std::min(north, east);
-      to_edge[i][NORTH_WEST] = std::min(north, west);
-      to_edge[i][SOUTH_EAST] = std::min(south, east);
-      to_edge[i][SOUTH_WEST] = std::min(south, west);
+      int north = 7 - y;
+      int south = y;
+      int east = 7 - x;
+      int west = x;
 
       to_edge[i][NORTH] = north;
       to_edge[i][SOUTH] = south;
       to_edge[i][EAST] = east;
       to_edge[i][WEST] = west;
+
+      to_edge[i][NORTH_EAST] = std::min(north, east);
+      to_edge[i][NORTH_WEST] = std::min(north, west);
+      to_edge[i][SOUTH_EAST] = std::min(south, east);
+      to_edge[i][SOUTH_WEST] = std::min(south, west);
     }
   }
 
@@ -81,19 +79,16 @@ void MoveGenerator::generate_king_moves(Board &board, int piece_index,
 
 void MoveGenerator::calculate_knight_moves() {
   for (int curr_square = 0; curr_square < Board::SQUARES; ++curr_square) {
-    // int piece_color = Piece::color(board.piece_at(curr_square));
     bitboard bb = 0;
 
-    int x, y;
-    x = curr_square % 8;
-    y = curr_square / 8;
+    int x = curr_square % 8;
+    int y = curr_square / 8;
 
     for (int i = 0; i < 8; i++) {
       int index = curr_square + knight_directions[i];
 
-      int x2, y2;
-      x2 = index % 8;
-      y2 = index / 8;
+      int x2 = index % 8;
+      int y2 = index / 8;
 
       if (std::abs(x - x2) > 2 || std::abs(y - y2) > 2)
         continue;
@@ -102,10 +97,6 @@ void MoveGenerator::calculate_knight_moves() {
         continue;
 
       bb |= 1ULL << index;
-
-      // if (Piece::color(board.piece_at(index)) == piece_color)
-      // continue;
-      // legal_moves.push_back({piece_index, index, FLAG_NONE});
     }
 
     knight_bitboards[curr_square] = bb;
@@ -163,7 +154,14 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
       continue;
 
     if (!board.is_square_empty(index) && color != moving_color) {
-      moves.push_back({piece_index, index, FLAG_NONE});
+      if (piece_index / 8 != promotion_rank) {
+        moves.push_back({piece_index, index, FLAG_NONE});
+      } else {
+        moves.push_back({piece_index, index, FLAG_PROMOTE_QUEEN});
+        moves.push_back({piece_index, index, FLAG_PROMOTE_ROOK});
+        moves.push_back({piece_index, index, FLAG_PROMOTE_BISHOP});
+        moves.push_back({piece_index, index, FLAG_PROMOTE_KNIGHT});
+      }
     } else if (index == board.en_passant_square)
       moves.push_back({piece_index, index, FLAG_EN_PASSANT});
   }
@@ -207,8 +205,6 @@ void MoveGenerator::generate_castles(Board &board, std::vector<Move> &moves) {
   bool can_move_right =
       std::find(moves.begin(), moves.end(), right) != moves.end();
 
-  int flag;
-
   if (can_castle_king && !(all_pieces & mask_king) && can_move_right) {
     moves.push_back({4 + base_rank, 6 + base_rank, FLAG_KING_CASTLE});
   }
@@ -221,8 +217,6 @@ void MoveGenerator::generate_castles(Board &board, std::vector<Move> &moves) {
 void MoveGenerator::generate_legal_moves(Board &board) {
 
   std::vector<Move> moves = generate_pseudo_legal_moves(board);
-
-  generate_castles(board, moves);
 
   for (int i = moves.size() - 1; i >= 0; --i) {
     board.do_move(moves[i]);
@@ -242,6 +236,42 @@ void MoveGenerator::generate_legal_moves(Board &board) {
     }
 
     board.undo_move();
+  }
+
+  board.new_turn();
+  std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
+
+  bool king_in_danger = false;
+  for (Move enemy_move : enemy_moves) {
+    if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
+      king_in_danger = true;
+      break;
+    }
+  }
+  board.new_turn();
+
+  if (!king_in_danger) {
+    generate_castles(board, moves);
+
+    for (int i = moves.size() - 1; i >= 0; --i) {
+      board.do_move(moves[i]);
+
+      std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
+
+      bool king_in_danger = false;
+      for (Move enemy_move : enemy_moves) {
+        if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
+          king_in_danger = true;
+          break;
+        }
+      }
+
+      if (king_in_danger) {
+        moves.erase(moves.begin() + i);
+      }
+
+      board.undo_move();
+    }
   }
 
   legal_moves = moves;

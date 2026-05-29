@@ -2,18 +2,29 @@
 #include "fen.h"
 #include "moves.h"
 #include "piece.h"
+#include <iostream>
 
-inline bool in_range(int x, int a, int b) {
-  if (a > b)
-    std::swap(a, b);
-  return x >= a && x <= b;
+inline bool in_range(int x, int min, int max) {
+  if (min > max)
+    std::swap(min, max);
+  return x >= min && x <= max;
 }
 
 Board::Board() {
-  Fen::load(*this, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+  // Fen::load(*this, Fen::START_POS);
+  Fen::load(
+      *this,
+      "r3k2r/p1p1qpb1/bn1ppnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/1R2K2R b Kkq -");
+  std::cout << Fen::generate_fen(*this) << std::endl;
 }
 
 Board::Board(std::string fen) { Fen::load(*this, fen.c_str()); }
+
+void Board::clear_board() {
+  for (int i = 0; i < 64; ++i) {
+    set_piece(i, Piece::EMPTY);
+  }
+}
 
 void Board::set_piece(int square, int piece) {
   if (!in_range(square, 0, SQUARES - 1))
@@ -48,18 +59,6 @@ void Board::undo_move() {
   int moved_color = Piece::color(piece_at(move.from));
 
   switch (move.flags) {
-  // case FLAG_WHITE_KING_CASTLE:
-  //   move_piece(5, 7);
-  //   break;
-  // case FLAG_WHITE_QUEEN_CASTLE:
-  //   move_piece(3, 0);
-  //   break;
-  // case FLAG_BLACK_KING_CASTLE:
-  //   move_piece(61, 63);
-  //   break;
-  // case FLAG_BLACK_QUEEN_CASTLE:
-  //   move_piece(58, 56);
-  //   break;
   case FLAG_KING_CASTLE:
     if (moved_color == Piece::WHITE)
       move_piece(5, 7);
@@ -71,7 +70,7 @@ void Board::undo_move() {
     if (moved_color == Piece::WHITE)
       move_piece(3, 0);
     else
-      move_piece(58, 56);
+      move_piece(59, 56);
     break;
 
   case FLAG_EN_PASSANT:
@@ -83,21 +82,25 @@ void Board::undo_move() {
     break;
   }
 
+  if (in_range(move.flags, FLAG_PROMOTE_QUEEN, FLAG_PROMOTE_KNIGHT))
+    set_piece(move.from, Piece::PAWN || moved_color);
+
   undo_list.pop_back();
 }
+
 inline void Board::handle_promotion(int flag, int from, int to) {
   switch (flag) {
   case FLAG_PROMOTE_QUEEN:
-    set_piece(to, Piece::color(piece_at(from)) | Piece::QUEEN);
+    set_piece(to, Piece::color(piece_at(to)) | Piece::QUEEN);
     break;
   case FLAG_PROMOTE_ROOK:
-    set_piece(to, Piece::color(piece_at(from)) | Piece::ROOK);
+    set_piece(to, Piece::color(piece_at(to)) | Piece::ROOK);
     break;
   case FLAG_PROMOTE_BISHOP:
-    set_piece(to, Piece::color(piece_at(from)) | Piece::BISHOP);
+    set_piece(to, Piece::color(piece_at(to)) | Piece::BISHOP);
     break;
   case FLAG_PROMOTE_KNIGHT:
-    set_piece(to, Piece::color(piece_at(from)) | Piece::KNIGHT);
+    set_piece(to, Piece::color(piece_at(to)) | Piece::KNIGHT);
     break;
   }
 }
@@ -106,24 +109,24 @@ inline void Board::handle_promotion(int flag, int from, int to) {
 inline void Board::update_castling_rights(int from, int to) {
   for (int square : {from, to}) {
     switch (square) {
-    case 4:
+    case E1:
       castling_rights &= ~MoveGenerator::CASTLING_WK;
       castling_rights &= ~MoveGenerator::CASTLING_WQ;
       break;
-    case 60:
+    case E8:
       castling_rights &= ~MoveGenerator::CASTLING_BK;
       castling_rights &= ~MoveGenerator::CASTLING_BQ;
       break;
-    case 0:
+    case A1:
       castling_rights &= ~MoveGenerator::CASTLING_WQ;
       break;
-    case 7:
+    case H1:
       castling_rights &= ~MoveGenerator::CASTLING_WK;
       break;
-    case 56:
+    case A8:
       castling_rights &= ~MoveGenerator::CASTLING_BQ;
       break;
-    case 63:
+    case H8:
       castling_rights &= ~MoveGenerator::CASTLING_BK;
       break;
     }
@@ -144,7 +147,7 @@ inline void Board::handle_special_cases(const Move &move, int moved_color,
     if (moved_color == Piece::WHITE)
       move_piece(0, 3);
     else
-      move_piece(56, 58);
+      move_piece(56, 59);
     break;
 
   case FLAG_DOUBLE_PAWN_PUSH:
