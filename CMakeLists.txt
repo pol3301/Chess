@@ -7,6 +7,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+enable_testing()
+
+add_subdirectory(googletest)
+
 # Default build type = Release (but allow overriding)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE
@@ -27,7 +31,8 @@ add_custom_target(
 set(SOURCES src/main.cpp src/renderer.cpp src/board.cpp src/game.cpp
             src/fen.cpp src/moves.cpp)
 
-add_executable(Chess ${SOURCES})
+# add_executable(Chess ${SOURCES})
+add_library(Chess STATIC ${SOURCES})
 
 # Option to enable ASan
 option(USE_ASAN "Enable AddressSanitizer" OFF)
@@ -41,3 +46,6 @@ endif()
 add_dependencies(Chess copy_resources)
 
 target_link_libraries(Chess PRIVATE SDL2::SDL2 SDL2_image::SDL2_image)
+
+
+add_subdirectory(tests)

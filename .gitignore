@@ -1,4 +1,5 @@
 build
+tests_build
 compile_commands.json
 .cache
 .DS_Store
