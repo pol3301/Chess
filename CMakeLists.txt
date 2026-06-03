@@ -7,6 +7,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(This ChessCore)
+
+include(FetchContent)
+
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        v1.14.0
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 enable_testing()
 
 add_subdirectory(googletest)
@@ -28,24 +41,35 @@ add_custom_target(
   copy_resources ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_SOURCE_DIR}/res ${CMAKE_BINARY_DIR}/res)
 
-set(SOURCES src/main.cpp src/renderer.cpp src/board.cpp src/game.cpp
-            src/fen.cpp src/moves.cpp)
+set(
+  SOURCES
+  src/renderer.cpp
+  src/board.cpp
+  src/game.cpp
+  src/fen.cpp
+  src/moves.cpp
+  src/perft.cpp
+)
 
-# add_executable(Chess ${SOURCES})
-add_library(Chess STATIC ${SOURCES})
+# add_executable(${This} ${SOURCES})
+add_library(${This} STATIC ${SOURCES})
+
+add_executable(Chess src/main.cpp)
+target_link_libraries(Chess ${This})
 
 # Option to enable ASan
 option(USE_ASAN "Enable AddressSanitizer" OFF)
 
 if(USE_ASAN)
-  target_compile_options(Chess PRIVATE -fsanitize=address
+  target_compile_options(${This} PUBLIC -fsanitize=address
   -fno-omit-frame-pointer)
-  target_link_options(Chess PRIVATE -fsanitize=address)
+  target_link_options(${This} PUBLIC -fsanitize=address)
 endif()
 
-add_dependencies(Chess copy_resources)
+add_dependencies(${This} copy_resources)
 
-target_link_libraries(Chess PRIVATE SDL2::SDL2 SDL2_image::SDL2_image)
-
+target_link_libraries(${This} PUBLIC SDL2::SDL2 SDL2_image::SDL2_image)
 
 add_subdirectory(tests)
+
+target_include_directories(ChessCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

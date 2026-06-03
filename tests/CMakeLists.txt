@@ -1,14 +1,13 @@
-cmake_minimum_required(VERSION 3.8)
+set(This ChessTests)
 
-set(This Tests)
-
-set(SOURCES test.cpp)
+set(SOURCES tests.cpp)
 
 add_executable(${This} ${SOURCES})
 
-target_link_libraries(${This} PUBLIC gtest_main ChessCore)
-
-add_test(
-  NAME ${This}
-  PROGRAM ${This}
+target_link_libraries(${This} PRIVATE
+  GTest::gtest_main
+  ChessCore
 )
+
+include(GoogleTest)
+gtest_discover_tests(${This})

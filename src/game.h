@@ -17,9 +17,11 @@ private:
   MoveGenerator mg;
   Renderer renderer;
 
-  HeldPiece held_piece = {};
+  HeldPiece held_piece{};
 
   bool is_running = true;
+
+  int init_libraries();
 
   void update(SDL_Event *e);
 };

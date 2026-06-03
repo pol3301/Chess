@@ -3,6 +3,7 @@
 #include "board.h"
 #include "moves.h"
 #include <SDL.h>
+#include <cstddef>
 #include <vector>
 
 constexpr int TILE_SIZE = 100;
@@ -15,7 +16,7 @@ public:
 
   ~Renderer();
 
-  void init();
+  int init();
 
   void render(Board &board, HeldPiece &held_piece,
               const std::vector<Move> &legal_moves) const;
@@ -26,11 +27,10 @@ private:
   SDL_Texture *piece_textures[12]{};
   Board &_board;
 
-  void load_piece_texture(int index, const char *path);
+  int load_piece_texture(int index, const char *path);
   int get_piece_texture_index(int piece) const;
 
-  void init_libraries();
-  void load_piece_textures();
+  int load_piece_textures();
   void draw_board_tiles() const;
   void draw_bitboard(bitboard bb) const;
   void draw_pieces(const HeldPiece &held_piece) const;

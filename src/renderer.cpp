@@ -22,46 +22,26 @@ enum piece_texture_index {
   BLACK_PAWN,
 };
 
-// TODO: Fix erryor handling
-void Renderer::init_libraries() {
-  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-    std::cerr << SDL_GetError() << std::endl;
-    exit(-1);
-  }
-
-  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-    std::cerr << SDL_GetError() << std::endl;
-    SDL_Quit();
-    exit(-1);
-  }
-}
-
-// TODO: Fix erryor handling
-void Renderer::init() {
-  init_libraries();
-
+int Renderer::init() {
   window =
       SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                        WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 
   if (!window) {
     std::cerr << SDL_GetError() << std::endl;
-    SDL_Quit();
-    IMG_Quit();
-    exit(-1);
+    return -1;
   }
 
   sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
   if (!sdl_renderer) {
     std::cerr << SDL_GetError() << std::endl;
-    SDL_Quit();
-    IMG_Quit();
-    SDL_DestroyRenderer(sdl_renderer);
-    exit(-1);
+    return -1;
   }
 
-  load_piece_textures();
+  if (load_piece_textures() != 0)
+    return -1;
+  return 0;
 }
 
 Renderer::~Renderer() {
@@ -77,7 +57,7 @@ Renderer::~Renderer() {
     SDL_DestroyWindow(window);
 }
 
-void Renderer::load_piece_texture(int index, const char *path) {
+int Renderer::load_piece_texture(int index, const char *path) {
   piece_textures[index] = IMG_LoadTexture(sdl_renderer, path);
 
   if (piece_textures[index])
@@ -87,8 +67,10 @@ void Renderer::load_piece_texture(int index, const char *path) {
     std::cerr << "Failed to load piece at path " << path << " at index "
               << index << std::endl;
 
-    exit(-1);
+    return -1;
   }
+
+  return 0;
 }
 
 void Renderer::draw_bitboard(bitboard bb) const {
@@ -105,20 +87,34 @@ void Renderer::draw_bitboard(bitboard bb) const {
   }
 }
 
-void Renderer::load_piece_textures() {
-  load_piece_texture(WHITE_KING, "res/100x100/wk.png");
-  load_piece_texture(WHITE_QUEEN, "res/100x100/wq.png");
-  load_piece_texture(WHITE_ROOK, "res/100x100/wr.png");
-  load_piece_texture(WHITE_BISHOP, "res/100x100/wb.png");
-  load_piece_texture(WHITE_KNIGHT, "res/100x100/wn.png");
-  load_piece_texture(WHITE_PAWN, "res/100x100/wp.png");
+int Renderer::load_piece_textures() {
+  if (load_piece_texture(WHITE_KING, "res/100x100/wk.png"))
+    return -1;
+  if (load_piece_texture(WHITE_QUEEN, "res/100x100/wq.png"))
+    return -1;
+  if (load_piece_texture(WHITE_ROOK, "res/100x100/wr.png"))
+    return -1;
+  if (load_piece_texture(WHITE_BISHOP, "res/100x100/wb.png"))
+    return -1;
+  if (load_piece_texture(WHITE_KNIGHT, "res/100x100/wn.png"))
+    return -1;
+  if (load_piece_texture(WHITE_PAWN, "res/100x100/wp.png"))
+    return -1;
 
-  load_piece_texture(BLACK_KING, "res/100x100/bk.png");
-  load_piece_texture(BLACK_QUEEN, "res/100x100/bq.png");
-  load_piece_texture(BLACK_ROOK, "res/100x100/br.png");
-  load_piece_texture(BLACK_BISHOP, "res/100x100/bb.png");
-  load_piece_texture(BLACK_KNIGHT, "res/100x100/bn.png");
-  load_piece_texture(BLACK_PAWN, "res/100x100/bp.png");
+  if (load_piece_texture(BLACK_KING, "res/100x100/bk.png"))
+    return -1;
+  if (load_piece_texture(BLACK_QUEEN, "res/100x100/bq.png"))
+    return -1;
+  if (load_piece_texture(BLACK_ROOK, "res/100x100/br.png"))
+    return -1;
+  if (load_piece_texture(BLACK_BISHOP, "res/100x100/bb.png"))
+    return -1;
+  if (load_piece_texture(BLACK_KNIGHT, "res/100x100/bn.png"))
+    return -1;
+  if (load_piece_texture(BLACK_PAWN, "res/100x100/bp.png"))
+    return -1;
+
+  return 0;
 }
 
 void Renderer::render(Board &board, HeldPiece &held_piece,
@@ -207,6 +203,8 @@ void Renderer::draw_held_piece(const HeldPiece &held_piece) const {
                    held_piece.y - (TILE_SIZE / 2), TILE_SIZE, TILE_SIZE};
 
   int texture_index = get_piece_texture_index(piece);
+  if (texture_index == -1)
+    return;
   SDL_Texture *texture = piece_textures[texture_index];
 
   SDL_RenderCopy(sdl_renderer, texture, nullptr, &rect);
@@ -216,6 +214,7 @@ void Renderer::draw_legal_moves(const std::vector<Move> &legal_moves,
                                 const HeldPiece &held_piece) const {
   if (!held_piece.is_piece_held)
     return;
+
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
   SDL_SetRenderDrawColor(sdl_renderer, 255, 0, 0, 255);

@@ -11,10 +11,7 @@ inline bool in_range(int x, int min, int max) {
 }
 
 Board::Board() {
-  // Fen::load(*this, Fen::START_POS);
-  Fen::load(
-      *this,
-      "r3k2r/p1p1qpb1/bn1ppnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/1R2K2R b Kkq -");
+  Fen::load(*this, Fen::START_POS);
   std::cout << Fen::generate_fen(*this) << std::endl;
 }
 

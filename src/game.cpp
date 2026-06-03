@@ -4,11 +4,18 @@
 #include <SDL_image.h>
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 
 constexpr int FRAME_RATE = 60;
 constexpr int FRAME_DELAY = 1000 / FRAME_RATE;
 
-Game::Game() : window(nullptr), renderer(board) { renderer.init(); }
+Game::Game() : window(nullptr), renderer(board) {
+  if (init_libraries() != 0)
+    is_running = false;
+
+  if (renderer.init() != 0)
+    is_running = false;
+}
 
 Game::~Game() {
   if (window)
@@ -16,6 +23,21 @@ Game::~Game() {
 
   SDL_Quit();
   IMG_Quit();
+}
+
+int Game::init_libraries() {
+  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    std::cerr << SDL_GetError() << std::endl;
+    return -1;
+  }
+
+  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+    std::cerr << IMG_GetError() << std::endl;
+    SDL_Quit();
+    return -1;
+  }
+
+  return 0;
 }
 
 void Game::update(SDL_Event *e) {

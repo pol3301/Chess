@@ -83,3 +83,5 @@ private:
 
   static int to_edge[Board::SQUARES][8];
 };
+
+std::string move_to_string(Move move);
