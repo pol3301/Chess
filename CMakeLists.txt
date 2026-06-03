@@ -22,8 +22,6 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_subdirectory(googletest)
-
 # Default build type = Release (but allow overriding)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE

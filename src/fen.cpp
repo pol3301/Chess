@@ -231,19 +231,26 @@ std::string Fen::generate_fen(Board &board) {
 
   int rights = board.get_castling_rights();
 
-  if (MoveGenerator::CASTLING_WK & rights)
-    fen.push_back('K');
-  if (MoveGenerator::CASTLING_WQ & rights)
-    fen.push_back('Q');
-  if (MoveGenerator::CASTLING_BK & rights)
-    fen.push_back('k');
-  if (MoveGenerator::CASTLING_BQ & rights)
-    fen.push_back('q');
+  if (!rights)
+    fen += '-';
+
+  else {
+    if (MoveGenerator::CASTLING_WK & rights)
+      fen.push_back('K');
+    if (MoveGenerator::CASTLING_WQ & rights)
+      fen.push_back('Q');
+    if (MoveGenerator::CASTLING_BK & rights)
+      fen.push_back('k');
+    if (MoveGenerator::CASTLING_BQ & rights)
+      fen.push_back('q');
+  }
+
+  fen.push_back(' ');
 
   if (board.en_passant_square != Board::EN_PASSANT_NULL) {
-    fen.push_back(' ');
     fen.append(tile_table[board.en_passant_square]);
-  }
+  } else
+    fen += '-';
 
   return fen;
 }

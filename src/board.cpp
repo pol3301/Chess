@@ -2,7 +2,6 @@
 #include "fen.h"
 #include "moves.h"
 #include "piece.h"
-#include <iostream>
 
 inline bool in_range(int x, int min, int max) {
   if (min > max)
@@ -10,10 +9,7 @@ inline bool in_range(int x, int min, int max) {
   return x >= min && x <= max;
 }
 
-Board::Board() {
-  Fen::load(*this, Fen::START_POS);
-  std::cout << Fen::generate_fen(*this) << std::endl;
-}
+Board::Board() { Fen::load(*this, Fen::START_POS); }
 
 Board::Board(std::string fen) { Fen::load(*this, fen.c_str()); }
 
@@ -71,16 +67,15 @@ void Board::undo_move() {
     break;
 
   case FLAG_EN_PASSANT:
-    if (moved_color == Piece::WHITE)
-      set_piece(move.to - 8, move.captured_piece);
-    else
-      set_piece(move.to + 8, move.captured_piece);
+    int dir = moved_color == Piece::WHITE ? -8 : 8;
+    set_piece(move.to + dir, move.captured_piece);
+
     set_piece(move.to, Piece::EMPTY);
     break;
   }
 
   if (in_range(move.flags, FLAG_PROMOTE_QUEEN, FLAG_PROMOTE_KNIGHT))
-    set_piece(move.from, Piece::PAWN || moved_color);
+    set_piece(move.from, Piece::PAWN | moved_color);
 
   undo_list.pop_back();
 }

@@ -139,7 +139,7 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
     dir = 8;
     capture_dir = capture_dir_white;
     start_rank = 1;
-    promotion_rank = 8;
+    promotion_rank = 7;
   } else {
     dir = -8;
     capture_dir = capture_dir_black;
@@ -151,7 +151,7 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
   int two_step = piece_index + (dir * 2);
 
   if (board.is_square_empty(one_step)) {
-    if (piece_index / 8 != promotion_rank) {
+    if (one_step / 8 != promotion_rank) {
       moves.push_back({piece_index, one_step, FLAG_NONE});
     } else {
       moves.push_back({piece_index, one_step, FLAG_PROMOTE_QUEEN});
@@ -168,15 +168,15 @@ void MoveGenerator::generate_pawn_moves(Board &board, int piece_index,
     int dir = capture_dir[i];
 
     int index = piece_index + dir;
-    int color = Piece::color(board.piece_at(index));
-
     int edges[] = {EAST, WEST};
 
     if (to_edge[piece_index][edges[i]] < 1)
       continue;
 
+    int color = Piece::color(board.piece_at(index));
+
     if (!board.is_square_empty(index) && color != moving_color) {
-      if (piece_index / 8 != promotion_rank) {
+      if (index / 8 != promotion_rank) {
         moves.push_back({piece_index, index, FLAG_NONE});
       } else {
         moves.push_back({piece_index, index, FLAG_PROMOTE_QUEEN});

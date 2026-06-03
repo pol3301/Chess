@@ -239,6 +239,8 @@ int Renderer::draw_promotion_box(int square) const {
   SDL_Rect bishop_rect = {x, y + 2 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
   SDL_Rect knight_rect = {x, y + 3 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
 
+  SDL_Rect background{1, 2, 3, 4};
+
   SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_QUEEN], nullptr,
                  &queen_rect);
   SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_ROOK], nullptr, &rook_rect);

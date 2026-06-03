@@ -51,6 +51,7 @@ public:
 
   void do_move(Move const &move);
   void undo_move();
+  void clear_undo_move_list() { undo_list.clear(); }
 
   int piece_at(int index) { return squares[index]; }
   bool is_square_empty(int index) {

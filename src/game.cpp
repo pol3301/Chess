@@ -1,8 +1,11 @@
 #include "game.h"
 #include "fen.h"
 #include "moves.h"
+#include <SDL_clipboard.h>
 #include <SDL_image.h>
+#include <SDL_stdinc.h>
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 
@@ -103,6 +106,19 @@ void Game::update(SDL_Event *e) {
 
       if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_c) {
         SDL_SetClipboardText(Fen::generate_fen(board).c_str());
+      }
+
+      if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_v) {
+        char *clipboard_raw = SDL_GetClipboardText();
+        if (clipboard_raw != nullptr && *clipboard_raw != '\0') {
+          std::string clipboard = clipboard_raw;
+          std::cout << clipboard << std::endl;
+          Fen::load(board, clipboard);
+          board.clear_undo_move_list();
+        }
+        SDL_free(clipboard_raw);
+
+        mg.generate_legal_moves(board);
       }
 
     default:
