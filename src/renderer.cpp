@@ -45,11 +45,6 @@ int Renderer::init() {
 }
 
 Renderer::~Renderer() {
-  for (int i = 0; i < 12; i++) {
-    if (piece_textures[i])
-      SDL_DestroyTexture(piece_textures[i]);
-  }
-
   if (sdl_renderer)
     SDL_DestroyRenderer(sdl_renderer);
 
@@ -58,7 +53,7 @@ Renderer::~Renderer() {
 }
 
 int Renderer::load_piece_texture(int index, const char *path) {
-  piece_textures[index] = IMG_LoadTexture(sdl_renderer, path);
+  piece_textures[index].reset(IMG_LoadTexture(sdl_renderer, path));
 
   if (piece_textures[index])
     std::cout << "Loaded piece at path " << path << " at index " << index
@@ -87,33 +82,35 @@ void Renderer::draw_bitboard(bitboard bb) const {
   }
 }
 
+struct PieceTextureInfo {
+  enum piece_texture_index index;
+  const char *path;
+};
+
 int Renderer::load_piece_textures() {
-  if (load_piece_texture(WHITE_KING, "res/100x100/wk.png"))
-    return -1;
-  if (load_piece_texture(WHITE_QUEEN, "res/100x100/wq.png"))
-    return -1;
-  if (load_piece_texture(WHITE_ROOK, "res/100x100/wr.png"))
-    return -1;
-  if (load_piece_texture(WHITE_BISHOP, "res/100x100/wb.png"))
-    return -1;
-  if (load_piece_texture(WHITE_KNIGHT, "res/100x100/wn.png"))
-    return -1;
-  if (load_piece_texture(WHITE_PAWN, "res/100x100/wp.png"))
-    return -1;
 
-  if (load_piece_texture(BLACK_KING, "res/100x100/bk.png"))
-    return -1;
-  if (load_piece_texture(BLACK_QUEEN, "res/100x100/bq.png"))
-    return -1;
-  if (load_piece_texture(BLACK_ROOK, "res/100x100/br.png"))
-    return -1;
-  if (load_piece_texture(BLACK_BISHOP, "res/100x100/bb.png"))
-    return -1;
-  if (load_piece_texture(BLACK_KNIGHT, "res/100x100/bn.png"))
-    return -1;
-  if (load_piece_texture(BLACK_PAWN, "res/100x100/bp.png"))
-    return -1;
+  const std::array<PieceTextureInfo, 12> textures_to_load = {{
+      {WHITE_KING, "res/100x100/wk.png"},
+      {WHITE_QUEEN, "res/100x100/wq.png"},
+      {WHITE_ROOK, "res/100x100/wr.png"},
+      {WHITE_BISHOP, "res/100x100/wb.png"},
+      {WHITE_KNIGHT, "res/100x100/wn.png"},
+      {WHITE_PAWN, "res/100x100/wp.png"},
+      {BLACK_KING, "res/100x100/bk.png"},
+      {BLACK_QUEEN, "res/100x100/bq.png"},
+      {BLACK_ROOK, "res/100x100/br.png"},
+      {BLACK_BISHOP, "res/100x100/bb.png"},
+      {BLACK_KNIGHT, "res/100x100/bn.png"},
+      {BLACK_PAWN, "res/100x100/bp.png"},
+  }};
 
+  for (const auto texture : textures_to_load) {
+    if (load_piece_texture(texture.index, texture.path)) {
+      std::cerr << "Failed to load texture at index: " << texture.index
+                << "from path: " << texture.path;
+      return -1;
+    }
+  }
   return 0;
 }
 
@@ -127,9 +124,9 @@ void Renderer::render(Board &board, HeldPiece &held_piece,
   // draw_bitboard(board.black_bitboard);
   // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 255, 255);
   // draw_bitboard(board.white_bitboard);
-  draw_pieces(held_piece);
+  draw_pieces(held_piece, board);
   // draw_promotion_box(56);
-  draw_held_piece(held_piece);
+  draw_held_piece(held_piece, board);
 
   SDL_RenderPresent(sdl_renderer);
 }
@@ -168,7 +165,8 @@ int Renderer::get_piece_texture_index(int piece) const {
   return texture_index;
 }
 
-void Renderer::draw_pieces(const HeldPiece &held_piece) const {
+void Renderer::draw_pieces(const HeldPiece &held_piece,
+                           const Board &board) const {
 
   SDL_Rect rect = {0, 0, TILE_SIZE, TILE_SIZE};
 
@@ -176,26 +174,27 @@ void Renderer::draw_pieces(const HeldPiece &held_piece) const {
     if (held_piece.is_piece_held && i == held_piece.index)
       continue;
 
-    if (Piece::type(_board.piece_at(i)) == Piece::EMPTY)
+    if (Piece::type(board.piece_at(i)) == Piece::EMPTY)
       continue;
 
     rect.x = (i % 8) * TILE_SIZE;
     rect.y = (7 - (i / 8)) * TILE_SIZE;
 
-    int texture_index = get_piece_texture_index(_board.piece_at(i));
+    int texture_index = get_piece_texture_index(board.piece_at(i));
 
     if (texture_index != -1) {
-      SDL_RenderCopy(sdl_renderer, piece_textures[texture_index], nullptr,
+      SDL_RenderCopy(sdl_renderer, piece_textures[texture_index].get(), nullptr,
                      &rect);
     }
   }
 }
 
-void Renderer::draw_held_piece(const HeldPiece &held_piece) const {
+void Renderer::draw_held_piece(const HeldPiece &held_piece,
+                               const Board board) const {
   if (!held_piece.is_piece_held)
     return;
 
-  int piece = _board.piece_at(held_piece.index);
+  int piece = board.piece_at(held_piece.index);
   if (!piece)
     return;
 
@@ -205,7 +204,7 @@ void Renderer::draw_held_piece(const HeldPiece &held_piece) const {
   int texture_index = get_piece_texture_index(piece);
   if (texture_index == -1)
     return;
-  SDL_Texture *texture = piece_textures[texture_index];
+  SDL_Texture *texture = piece_textures[texture_index].get();
 
   SDL_RenderCopy(sdl_renderer, texture, nullptr, &rect);
 }
@@ -241,12 +240,13 @@ int Renderer::draw_promotion_box(int square) const {
 
   SDL_Rect background{1, 2, 3, 4};
 
-  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_QUEEN], nullptr,
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_QUEEN].get(), nullptr,
                  &queen_rect);
-  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_ROOK], nullptr, &rook_rect);
-  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_BISHOP], nullptr,
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_ROOK].get(), nullptr,
+                 &rook_rect);
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_BISHOP].get(), nullptr,
                  &bishop_rect);
-  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_KNIGHT], nullptr,
+  SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_KNIGHT].get(), nullptr,
                  &knight_rect);
 
   return 0;

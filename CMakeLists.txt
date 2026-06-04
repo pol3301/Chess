@@ -11,14 +11,14 @@ set(This ChessCore)
 
 include(FetchContent)
 
-FetchContent_Declare(
+fetchcontent_declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG        v1.14.0
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+fetchcontent_makeavailable(googletest)
 
 set(SDL_TESTS OFF CACHE BOOL "Disable SDL2 tests" FORCE)
 set(SDL_TEST OFF CACHE BOOL "Disable SDL2 tests" FORCE)
@@ -38,21 +38,21 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             FORCE)
 endif()
 
-FetchContent_Declare(
+fetchcontent_declare(
   SDL2
   GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
   GIT_TAG        release-2.30.3
   FIND_PACKAGE_ARGS
 )
 
-FetchContent_Declare(
+fetchcontent_declare(
   SDL2_image
   GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
   GIT_TAG        release-2.8.2
   FIND_PACKAGE_ARGS
 )
 
-FetchContent_MakeAvailable(SDL2 SDL2_image)
+fetchcontent_makeavailable(SDL2 SDL2_image)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)

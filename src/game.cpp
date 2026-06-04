@@ -3,6 +3,7 @@
 #include "moves.h"
 #include <SDL_clipboard.h>
 #include <SDL_image.h>
+#include <SDL_keycode.h>
 #include <SDL_stdinc.h>
 #include <algorithm>
 #include <cstddef>
@@ -12,7 +13,7 @@
 constexpr int FRAME_RATE = 60;
 constexpr int FRAME_DELAY = 1000 / FRAME_RATE;
 
-Game::Game() : window(nullptr), renderer(board) {
+Game::Game() : window(nullptr) {
   if (init_libraries() != 0)
     is_running = false;
 
@@ -51,31 +52,25 @@ void Game::update(SDL_Event *e) {
 
   std::vector<Move>::iterator moveIndex;
 
+  SDL_GetMouseState(&held_piece.x, &held_piece.y);
+
+  x = held_piece.x / 100;
+  y = held_piece.y / 100;
+
+  y = 7 - y;
+
   while (SDL_PollEvent(e)) {
     switch (e->type) {
     case SDL_QUIT:
       is_running = false;
+
     case SDL_MOUSEBUTTONDOWN:
-      SDL_GetMouseState(&held_piece.x, &held_piece.y);
-
-      x = held_piece.x / 100;
-      y = held_piece.y / 100;
-
-      y = 7 - y;
-
       held_piece.index = y * 8 + x;
       held_piece.is_piece_held = true;
       break;
 
     case SDL_MOUSEBUTTONUP:
-      SDL_GetMouseState(&held_piece.x, &held_piece.y);
       held_piece.is_piece_held = false;
-
-      x = held_piece.x / 100;
-      y = held_piece.y / 100;
-
-      y = 7 - y;
-
       move = {held_piece.index, y * 8 + x, 0};
 
       moveIndex = std::find(mg.legal_moves.begin(), mg.legal_moves.end(), move);
@@ -93,32 +88,38 @@ void Game::update(SDL_Event *e) {
     case SDL_KEYDOWN:
       key_pressed = e->key.keysym.sym;
       key_mod = e->key.keysym.mod;
-      if (key_pressed == SDLK_ESCAPE)
-        is_running = false;
-      if (key_pressed == SDLK_n) {
-        board.new_turn();
-        mg.generate_legal_moves(board);
-      }
-      if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_z) {
-        board.undo_move();
-        mg.generate_legal_moves(board);
-      }
 
-      if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_c) {
-        SDL_SetClipboardText(Fen::generate_fen(board).c_str());
-      }
+      if (key_mod & KMOD_CTRL) {
+        switch (key_pressed) {
+        case SDLK_z:
+          board.undo_move();
+          mg.generate_legal_moves(board);
+          break;
+        case SDLK_c:
+          SDL_SetClipboardText(Fen::generate_fen(board).c_str());
+          break;
+        case SDLK_v:
+          char *clipboard_raw = SDL_GetClipboardText();
+          if (clipboard_raw != nullptr && *clipboard_raw != '\0') {
+            std::string clipboard = clipboard_raw;
+            std::cout << clipboard << std::endl;
+            board = Board(clipboard);
+          }
+          SDL_free(clipboard_raw);
 
-      if ((key_mod & KMOD_CTRL) && key_pressed == SDLK_v) {
-        char *clipboard_raw = SDL_GetClipboardText();
-        if (clipboard_raw != nullptr && *clipboard_raw != '\0') {
-          std::string clipboard = clipboard_raw;
-          std::cout << clipboard << std::endl;
-          Fen::load(board, clipboard);
-          board.clear_undo_move_list();
+          mg.generate_legal_moves(board);
+          break;
         }
-        SDL_free(clipboard_raw);
-
-        mg.generate_legal_moves(board);
+      } else {
+        switch (key_pressed) {
+        case SDLK_ESCAPE:
+          is_running = false;
+          break;
+        case SDLK_n:
+          board.new_turn();
+          mg.generate_legal_moves(board);
+          break;
+        }
       }
 
     default:

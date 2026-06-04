@@ -2,6 +2,7 @@
 #include "board.h"
 #include "piece.h"
 #include <algorithm>
+#include <array>
 #include <bit>
 // #include <iostream>
 

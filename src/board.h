@@ -53,7 +53,7 @@ public:
   void undo_move();
   void clear_undo_move_list() { undo_list.clear(); }
 
-  int piece_at(int index) { return squares[index]; }
+  int piece_at(int index) const { return squares[index]; }
   bool is_square_empty(int index) {
     return !((white_bitboard | black_bitboard) & 1ULL << index);
   }
