@@ -20,6 +20,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+set(SDL_TESTS OFF CACHE BOOL "Disable SDL2 tests" FORCE)
+set(SDL_TEST OFF CACHE BOOL "Disable SDL2 tests" FORCE)
+set(SDL2IMAGE_SAMPLES OFF CACHE BOOL "Disable SDL2_image samples" FORCE)
+set(SDL2IMAGE_TESTS OFF CACHE BOOL "Disable SDL2_image tests" FORCE)
+
+set(SDL2IMAGE_VENDORED ON CACHE BOOL "Use vendored dependencies" FORCE)
+
 enable_testing()
 
 # Default build type = Release (but allow overriding)
@@ -30,6 +37,22 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "Choose the build type (Debug, Release, RelWithDebInfo, MinSizeRel)"
             FORCE)
 endif()
+
+FetchContent_Declare(
+  SDL2
+  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+  GIT_TAG        release-2.30.3
+  FIND_PACKAGE_ARGS
+)
+
+FetchContent_Declare(
+  SDL2_image
+  GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+  GIT_TAG        release-2.8.2
+  FIND_PACKAGE_ARGS
+)
+
+FetchContent_MakeAvailable(SDL2 SDL2_image)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
