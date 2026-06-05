@@ -1,6 +1,8 @@
 #include "renderer.h"
 #include "board.h"
+#include "game.h"
 #include "piece.h"
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <bit>
@@ -114,8 +116,8 @@ int Renderer::load_piece_textures() {
   return 0;
 }
 
-void Renderer::render(Board &board, HeldPiece &held_piece,
-                      const std::vector<Move> &legal_moves) const {
+void Renderer::render_game(Board &board, HeldPiece &held_piece,
+                           const std::vector<Move> &legal_moves) const {
   SDL_RenderClear(sdl_renderer);
 
   draw_board_tiles();

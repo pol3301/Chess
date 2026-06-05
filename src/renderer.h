@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+struct HeldPiece;
+
 struct TextureDeleter {
   void operator()(SDL_Texture *texture) const {
     if (texture) {
@@ -30,8 +32,8 @@ public:
 
   int init();
 
-  void render(Board &board, HeldPiece &held_piece,
-              const std::vector<Move> &legal_moves) const;
+  void render_game(Board &board, HeldPiece &held_piece,
+                   const std::vector<Move> &legal_moves) const;
 
 private:
   SDL_Window *window;

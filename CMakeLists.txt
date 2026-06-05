@@ -70,6 +70,7 @@ set(
   src/fen.cpp
   src/moves.cpp
   src/perft.cpp
+  src/inputhandler.cpp
 )
 
 # add_executable(${This} ${SOURCES})

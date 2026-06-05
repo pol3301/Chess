@@ -20,7 +20,11 @@ struct Move {
   int flags;
 
   bool operator==(const Move &other) const {
-    return from == other.from && to == other.to;
+    return (from == other.from && to == other.to);
+  }
+
+  bool is_promotion() {
+    return (flags >= FLAG_PROMOTE_QUEEN && flags <= FLAG_PROMOTE_KNIGHT);
   }
 };
 
@@ -71,7 +75,7 @@ private:
 
   std::vector<Move> generate_pseudo_legal_moves(Board &board);
 
-  void generate_castles(Board &board, std::vector<Move> &moves);
+  std::vector<Move> generate_castles(Board &board, std::vector<Move> &moves);
   void generate_king_moves(Board &board, int piece_index,
                            std::vector<Move> &moves);
   void generate_knight_moves(Board &board, int piece_index,

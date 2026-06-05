@@ -30,11 +30,6 @@ struct UndoMove {
   int flags;
 };
 
-struct HeldPiece {
-  int index, x, y, piece;
-  bool is_piece_held;
-};
-
 class Board {
 public:
   static constexpr int SQUARES = 64;

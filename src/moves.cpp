@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
-// #include <iostream>
+#include <vector>
 
 int MoveGenerator::to_edge[Board::SQUARES][8] = {0};
 bitboard MoveGenerator::knight_bitboards[Board::SQUARES];
@@ -206,7 +206,11 @@ void MoveGenerator::generate_knight_moves(Board &board, int piece_index,
   }
 }
 
-void MoveGenerator::generate_castles(Board &board, std::vector<Move> &moves) {
+std::vector<Move> MoveGenerator::generate_castles(Board &board,
+                                                  std::vector<Move> &moves) {
+  std::vector<Move> castling_moves;
+  moves.reserve(4);
+
   int rights = board.get_castling_rights();
   bool is_white_turn = board.get_turn() == Piece::WHITE;
 
@@ -229,12 +233,14 @@ void MoveGenerator::generate_castles(Board &board, std::vector<Move> &moves) {
       std::find(moves.begin(), moves.end(), right) != moves.end();
 
   if (can_castle_king && !(all_pieces & mask_king) && can_move_right) {
-    moves.push_back({4 + base_rank, 6 + base_rank, FLAG_KING_CASTLE});
+    castling_moves.push_back({4 + base_rank, 6 + base_rank, FLAG_KING_CASTLE});
   }
 
   if (can_castle_queen && !(all_pieces & mask_queen) && can_move_left) {
-    moves.push_back({4 + base_rank, 2 + base_rank, FLAG_QUEEN_CASTLE});
+    castling_moves.push_back({4 + base_rank, 2 + base_rank, FLAG_QUEEN_CASTLE});
   }
+
+  return castling_moves;
 }
 
 void MoveGenerator::generate_legal_moves(Board &board) {
@@ -261,39 +267,42 @@ void MoveGenerator::generate_legal_moves(Board &board) {
     board.undo_move();
   }
 
-  board.new_turn();
-  std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
+  if (board.get_castling_rights() != 0) {
+    board.new_turn();
+    std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
 
-  bool king_in_danger = false;
-  for (Move enemy_move : enemy_moves) {
-    if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
-      king_in_danger = true;
-      break;
+    bool king_in_danger = false;
+    for (Move enemy_move : enemy_moves) {
+      if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
+        king_in_danger = true;
+        break;
+      }
     }
-  }
-  board.new_turn();
+    board.new_turn();
 
-  if (!king_in_danger) {
-    generate_castles(board, moves);
+    if (!king_in_danger) {
+      std::vector<Move> castles = generate_castles(board, moves);
 
-    for (int i = moves.size() - 1; i >= 0; --i) {
-      board.do_move(moves[i]);
+      if (castles.size() != 0) {
+        for (Move castle : castles) {
+          board.do_move(castle);
 
-      std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
+          std::vector<Move> enemy_moves = generate_pseudo_legal_moves(board);
 
-      bool king_in_danger = false;
-      for (Move enemy_move : enemy_moves) {
-        if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
-          king_in_danger = true;
-          break;
+          bool king_in_danger = false;
+          for (Move enemy_move : enemy_moves) {
+            if (Piece::type(board.piece_at(enemy_move.to)) == Piece::KING) {
+              king_in_danger = true;
+              break;
+            }
+          }
+
+          if (!king_in_danger)
+            moves.push_back(castle);
+
+          board.undo_move();
         }
       }
-
-      if (king_in_danger) {
-        moves.erase(moves.begin() + i);
-      }
-
-      board.undo_move();
     }
   }
 

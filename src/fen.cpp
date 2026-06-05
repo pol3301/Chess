@@ -80,7 +80,13 @@ std::vector<std::string_view> split_strings(std::string_view fen) {
   return strings;
 }
 
-void Fen::load(Board &board, std::string_view fen) {
+int Fen::load(Board &board, std::string_view fen) {
+  auto failed = [&]() {
+    load(board, START_POS);
+    std::cout << "Failed" << std::endl;
+    return -1;
+  };
+
   board.clear_board();
 
   int x = 0, y = 7;
@@ -90,15 +96,12 @@ void Fen::load(Board &board, std::string_view fen) {
 
   std::vector<std::string_view> parts = split_strings(fen);
 
-  bool failed = false;
-
   if (parts.size() < 4)
-    failed = true;
+    return failed();
 
   for (char token : parts[0]) {
     if (!is_fen_char(token)) {
-      failed = true;
-      break;
+      return failed();
     }
 
     if (std::isalpha(token)) {
@@ -108,7 +111,7 @@ void Fen::load(Board &board, std::string_view fen) {
       x += token - '0';
     } else if (token == '/') {
       if (x != 8) {
-        failed = true;
+        return failed();
         break;
       }
       x = 0;
@@ -117,12 +120,12 @@ void Fen::load(Board &board, std::string_view fen) {
   }
 
   if (parts[1].size() > 1)
-    failed = true;
+    return failed();
   else
     board.set_turn(parts[1][0] == 'w' ? Piece::WHITE : Piece::BLACK);
 
   if (parts[2].size() > 4)
-    failed = true;
+    return failed();
   else {
     int rights = 0;
     for (char right : parts[2]) {
@@ -142,7 +145,7 @@ void Fen::load(Board &board, std::string_view fen) {
       case '-':
         break;
       default:
-        failed = true;
+        return failed();
         break;
       }
     }
@@ -150,7 +153,7 @@ void Fen::load(Board &board, std::string_view fen) {
   }
 
   if (parts[3].size() > 2)
-    failed = true;
+    return failed();
   else {
     if (parts[3] == "-")
       board.en_passant_square = Board::EN_PASSANT_NULL;
@@ -158,16 +161,13 @@ void Fen::load(Board &board, std::string_view fen) {
       board.en_passant_square = parts[3][0] - 'a' + (parts[3][1] - '1') * 8;
     if ((board.en_passant_square > 64 || board.en_passant_square < 0) &&
         parts[3] != "-")
-      failed = true;
+      return failed();
   }
 
   if (!(x == 8 && y == 0))
-    failed = true;
+    return failed();
 
-  if (failed) {
-    load(board, START_POS);
-    std::cout << failed << std::endl;
-  }
+  return 0;
 }
 
 std::string Fen::generate_fen(Board &board) {
