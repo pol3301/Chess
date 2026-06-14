@@ -5,6 +5,7 @@
 
 #include <SDL.h>
 #include <SDL_image.h>
+#include <array>
 #include <bit>
 #include <iostream>
 
@@ -116,18 +117,24 @@ int Renderer::load_piece_textures() {
   return 0;
 }
 
+void Renderer::render_promotion(int promoting_square, Board &board,
+                                HeldPiece &held_piece) {
+  SDL_RenderClear(sdl_renderer);
+
+  draw_board_tiles();
+  draw_pieces(held_piece, board);
+  draw_promotion_box(promoting_square);
+
+  SDL_RenderPresent(sdl_renderer);
+}
+
 void Renderer::render_game(Board &board, HeldPiece &held_piece,
                            const std::vector<Move> &legal_moves) const {
   SDL_RenderClear(sdl_renderer);
 
   draw_board_tiles();
   draw_legal_moves(legal_moves, held_piece);
-  // SDL_SetRenderDrawColor(sdl_renderer, 0, 255, 0, 255);
-  // draw_bitboard(board.black_bitboard);
-  // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 255, 255);
-  // draw_bitboard(board.white_bitboard);
   draw_pieces(held_piece, board);
-  // draw_promotion_box(56);
   draw_held_piece(held_piece, board);
 
   SDL_RenderPresent(sdl_renderer);
@@ -240,7 +247,10 @@ int Renderer::draw_promotion_box(int square) const {
   SDL_Rect bishop_rect = {x, y + 2 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
   SDL_Rect knight_rect = {x, y + 3 * TILE_SIZE, TILE_SIZE, TILE_SIZE};
 
-  SDL_Rect background{1, 2, 3, 4};
+  SDL_Rect background = {x, y, TILE_SIZE, TILE_SIZE * 4};
+
+  SDL_SetRenderDrawColor(sdl_renderer, 255, 255, 255, 255); // White
+  SDL_RenderFillRect(sdl_renderer, &background);
 
   SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_QUEEN].get(), nullptr,
                  &queen_rect);
@@ -250,6 +260,15 @@ int Renderer::draw_promotion_box(int square) const {
                  &bishop_rect);
   SDL_RenderCopy(sdl_renderer, piece_textures[WHITE_KNIGHT].get(), nullptr,
                  &knight_rect);
+
+  // SDL_RenderCopy(sdl_renderer, piece_textures[BLACK_QUEEN].get(), nullptr,
+  //                &queen_rect);
+  // SDL_RenderCopy(sdl_renderer, piece_textures[BLACK_ROOK].get(), nullptr,
+  //                &rook_rect);
+  // SDL_RenderCopy(sdl_renderer, piece_textures[BLACK_BISHOP].get(), nullptr,
+  //                &bishop_rect);
+  // SDL_RenderCopy(sdl_renderer, piece_textures[BLACK_KNIGHT].get(), nullptr,
+  //                &knight_rect);
 
   return 0;
 }

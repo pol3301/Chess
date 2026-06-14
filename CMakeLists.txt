@@ -95,3 +95,12 @@ target_link_libraries(${This} PUBLIC SDL2::SDL2 SDL2_image::SDL2_image)
 add_subdirectory(tests)
 
 target_include_directories(ChessCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+if(WIN32)
+  add_custom_command(TARGET Chess POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "$<TARGET_RUNTIME_DLLS:Chess>"
+    "$<TARGET_FILE_DIR:CHESS>"
+  COMMAND_EXPAND_LISTS
+)
+endif()

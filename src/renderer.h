@@ -3,7 +3,6 @@
 #include "board.h"
 #include "moves.h"
 #include <SDL.h>
-#include <SDL_render.h>
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -34,6 +33,9 @@ public:
 
   void render_game(Board &board, HeldPiece &held_piece,
                    const std::vector<Move> &legal_moves) const;
+
+  void render_promotion(int promoting_square, Board &board,
+                        HeldPiece &held_piece);
 
 private:
   SDL_Window *window;

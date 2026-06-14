@@ -44,91 +44,20 @@ int Game::init_libraries() {
   return 0;
 }
 
-void Game::update() {
-  // int x, y;
-  // Move move;
-  // SDL_Keycode key_pressed;
-  // Uint16 key_mod;
-  // SDL_Event e;
-  //
-  // std::vector<Move>::iterator moveIndex;
-  //
-  // SDL_GetMouseState(&held_piece.x, &held_piece.y);
-  //
-  // x = held_piece.x / 100;
-  // y = held_piece.y / 100;
-  //
-  // y = 7 - y;
-  //
-  // while (SDL_PollEvent(&e)) {
-  //   switch (e.type) {
-  //   case SDL_QUIT:
-  //     is_running = false;
-  //
-  //   case SDL_MOUSEBUTTONDOWN:
-  //     held_piece.index = y * 8 + x;
-  //     held_piece.is_piece_held = true;
-  //     break;
-  //
-  //   case SDL_MOUSEBUTTONUP:
-  //     held_piece.is_piece_held = false;
-  //     move = {held_piece.index, y * 8 + x, 0};
-  //
-  //     moveIndex = std::find(mg.legal_moves.begin(), mg.legal_moves.end(),
-  //     move); if (moveIndex != mg.legal_moves.end()) {
-  //       board.do_move(*moveIndex);
-  //       mg.generate_legal_moves(board);
-  //     }
-  //
-  //     break;
-  //
-  //   case SDL_MOUSEMOTION:
-  //     SDL_GetMouseState(&held_piece.x, &held_piece.y);
-  //     break;
-  //
-  //   case SDL_KEYDOWN:
-  //     key_pressed = e.key.keysym.sym;
-  //     key_mod = e.key.keysym.mod;
-  //
-  //     if (key_mod & KMOD_CTRL) {
-  //       switch (key_pressed) {
-  //       case SDLK_z:
-  //         board.undo_move();
-  //         mg.generate_legal_moves(board);
-  //         break;
-  //       case SDLK_c:
-  //         SDL_SetClipboardText(Fen::generate_fen(board).c_str());
-  //         break;
-  //       case SDLK_v:
-  //         char *clipboard_raw = SDL_GetClipboardText();
-  //         if (clipboard_raw != nullptr && *clipboard_raw != '\0') {
-  //           std::string clipboard = clipboard_raw;
-  //           std::cout << clipboard << std::endl;
-  //           board = Board(clipboard);
-  //         }
-  //         SDL_free(clipboard_raw);
-  //
-  //         mg.generate_legal_moves(board);
-  //         break;
-  //       }
-  //     } else {
-  //       switch (key_pressed) {
-  //       case SDLK_ESCAPE:
-  //         is_running = false;
-  //         break;
-  //       case SDLK_n:
-  //         board.new_turn();
-  //         mg.generate_legal_moves(board);
-  //         break;
-  //       }
-  //     }
-  //
-  //   default:
-  //     break;
-  //   }
-  // }
-  ihandler.handle_input(*this);
+void Game::render() {
+  switch (game_state) {
+  case GameState::PLAYING:
+    renderer.render_game(board, held_piece, mg.legal_moves);
+    break;
+  case GameState::PROMOTING:
+    renderer.render_promotion(promoting_square, board, held_piece);
+    break;
+  case GameState::MENU:
+    break;
+  }
 }
+
+void Game::update() { ihandler.handle_input(*this); }
 
 void Game::run() {
   mg.generate_legal_moves(board);
@@ -136,7 +65,7 @@ void Game::run() {
     uint32_t frame_start = SDL_GetTicks();
 
     update();
-    renderer.render_game(board, held_piece, mg.legal_moves);
+    render();
 
     uint32_t frame_time = SDL_GetTicks() - frame_start;
 
@@ -149,7 +78,7 @@ void Game::pick_up_piece(int mouse_x, int mouse_y) {
   held_piece.is_piece_held = true;
   held_piece.x = mouse_x;
   held_piece.y = mouse_y;
-  held_piece.index = mouse_x / 100 + (8 * (7 - (mouse_y) / 100));
+  held_piece.index = coordinates_to_index(mouse_x, mouse_y);
 }
 void Game::drop_piece(int mouse_x, int mouse_y) {
   held_piece.is_piece_held = false;
@@ -178,4 +107,35 @@ void Game::copy_fen_to_clipboard() {
   SDL_SetClipboardText(Fen::generate_fen(board).c_str());
 }
 
-// void Game::promotion_query(int index) { game_state = GameState::PROMOTING; }
+void Game::promote(int mouse_x, int mouse_y) {
+  int click_index = coordinates_to_index(mouse_x, mouse_y);
+
+  switch ((promoting_square - click_index) / 8) {
+  case 0:
+    board.do_move({held_piece.index, promoting_square, FLAG_PROMOTE_QUEEN});
+    break;
+  case 1:
+    board.do_move({held_piece.index, promoting_square, FLAG_PROMOTE_ROOK});
+    break;
+  case 2:
+    board.do_move({held_piece.index, promoting_square, FLAG_PROMOTE_BISHOP});
+    break;
+  case 3:
+    board.do_move({held_piece.index, promoting_square, FLAG_PROMOTE_KNIGHT});
+    break;
+  }
+
+  game_state = GameState::PLAYING;
+}
+
+void Game::promotion_query(int index) {
+  game_state = GameState::PROMOTING;
+  promoting_square = index;
+}
+
+int Game::coordinates_to_index(int x, int y) {
+  if (viewing_side == Piece::WHITE)
+    return x / 100 + (8 * (7 - (y) / 100));
+  else
+    return x / 100 + (8 * (y / 100));
+}
