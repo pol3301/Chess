@@ -90,7 +90,11 @@ endif()
 
 add_dependencies(${This} copy_resources)
 
-target_link_libraries(${This} PUBLIC SDL2::SDL2 SDL2_image::SDL2_image)
+target_link_libraries(${This} PUBLIC
+  SDL2::SDL2
+  SDL2_image::SDL2_image
+  SDL2::SDL2main
+)
 
 add_subdirectory(tests)
 
@@ -100,7 +104,7 @@ if(WIN32)
   add_custom_command(TARGET Chess POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "$<TARGET_RUNTIME_DLLS:Chess>"
-    "$<TARGET_FILE_DIR:CHESS>"
+    "$<TARGET_FILE_DIR:Chess>"
   COMMAND_EXPAND_LISTS
 )
 endif()

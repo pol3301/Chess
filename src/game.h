@@ -24,7 +24,10 @@ public:
   void pick_up_piece(int mouse_x, int mouse_y);
   void drop_piece(int mouse_x, int mouse_y);
   void move_held_piece(int mouse_x, int mouse_y);
-  void undo_move() { board.undo_move(); }
+  void undo_move() {
+    board.undo_move();
+    mg.generate_legal_moves(board);
+  }
   void copy_fen_to_clipboard();
   int paste_fen(std::string fen) { return Fen::load(board, fen); }
   void promote(int mouse_x, int mouse_y);

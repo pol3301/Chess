@@ -125,6 +125,8 @@ void Game::promote(int mouse_x, int mouse_y) {
     break;
   }
 
+  mg.generate_legal_moves(board);
+
   game_state = GameState::PLAYING;
 }
 
